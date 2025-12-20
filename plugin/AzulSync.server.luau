@@ -5,6 +5,7 @@
 	Ransomwave 2025
 ]]
 
+-- Services
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 local ScriptEditorService = game:GetService("ScriptEditorService")
@@ -16,13 +17,14 @@ end
 
 local azulPluginFolder = script.Parent
 
--- Import WebSocket client
+-- Modules
 local WebSocketClient = require(script.Parent.WebSocketClient)
 local CollapsibleTitledSection = require(azulPluginFolder.StudioWidgets.Components.CollapsibleTitledSection)
 local CustomTextButton = require(azulPluginFolder.StudioWidgets.Components.CustomTextButton)
 local LabeledCheckbox = require(azulPluginFolder.StudioWidgets.Components.LabeledCheckbox)
 local LabeledMultiChoice = require(azulPluginFolder.StudioWidgets.Components.LabeledMultiChoice)
 local LabeledTextInput = require(azulPluginFolder.StudioWidgets.Components.LabeledTextInput)
+local VerticalScrollingFrame = require(azulPluginFolder.StudioWidgets.Components.VerticalScrollingFrame)
 
 local enum = {
 	listType = {
@@ -930,12 +932,15 @@ local azulWidget = plugin:CreateDockWidgetPluginGuiAsync("azulWidget", widgetInf
 azulWidget.Name = "AzulCompanionPlugin"
 azulWidget.Title = "Azul" -- Optional widget title
 
-local uiListLayout = Instance.new("UIListLayout")
-uiListLayout.Parent = azulWidget
-uiListLayout.Padding = UDim.new(0, 10)
+local mainScrollFrame = VerticalScrollingFrame.new("main")
+mainScrollFrame:GetContentsFrame().Parent = azulWidget
+
+--local uiListLayout = Instance.new("UIListLayout")
+--uiListLayout.Parent = mainScrollFrame:GetContentsFrame()
+--uiListLayout.Padding = UDim.new(0, 10)
 
 local mainSectionListLayout = Instance.new("UIListLayout")
-mainSectionListLayout.Parent = azulWidget
+mainSectionListLayout.Parent = mainScrollFrame:GetSectionFrame()
 mainSectionListLayout.Padding = UDim.new(0, 0)
 mainSectionListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 mainSectionListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
@@ -948,7 +953,7 @@ local mainSection = CollapsibleTitledSection.new(
 	false -- minimized by default?
 )
 mainSection:GetSectionFrame().LayoutOrder = 0
-mainSection:GetSectionFrame().Parent = azulWidget
+mainSection:GetSectionFrame().Parent = mainScrollFrame:GetContentsFrame()
 
 local function createInfoLabel(text: string)
 	local label = Instance.new("TextLabel")
@@ -961,7 +966,7 @@ local function createInfoLabel(text: string)
 	label.TextColor3 = Color3.new(0.5, 0.5, 0.5)
 	label.Font = Enum.Font.SourceSans
 	label.TextSize = 15
-	label.Text = text
+	label.Text = `{text}<br/>`
 	label.TextXAlignment = Enum.TextXAlignment.Left
 
 	local padding = Instance.new("UIPadding")
@@ -991,7 +996,7 @@ mainSection:AddChild(titleImageLabel, 0)
 
 -- Connect/Disconnect button
 local syncButton = CustomTextButton.new("toggleSync", "Connect", false)
-syncButton.Parent = azulWidget
+syncButton.Parent = mainScrollFrame:GetContentsFrame()
 
 syncButton:SetSize(UDim2.fromScale(1, 0.25))
 
@@ -1046,7 +1051,7 @@ local settingsSection = CollapsibleTitledSection.new(
 	true -- minimized by default?
 )
 settingsSection:GetSectionFrame().LayoutOrder = 1
-settingsSection:GetSectionFrame().Parent = azulWidget
+settingsSection:GetSectionFrame().Parent = mainScrollFrame:GetContentsFrame()
 
 -- WebSocket URL setting
 local websocketUrlLabel = LabeledTextInput.new(
