@@ -888,7 +888,12 @@ function stopSync()
 	end
 	connections = {}
 
-	infoPrint("[Azul]: Sync disabled")
+	-- Clear GUID attributes if configured
+	if CONFIG.CLEAR_GUIDS_ON_EXIT then
+		clearAllGUIDAttributes()
+	end
+
+	infoPrint("[Azul]: Sync stopped")
 end
 
 -- -- Toggle button handler
@@ -1074,17 +1079,22 @@ settingsSection:AddChild(guidAttributeLabel:GetFrame())
 settingsSection:AddChild(createInfoLabel("Name of the attribute used to store Azul GUIDs on instances."))
 
 -- Clear Azul GUIDs on exit checkbox
-local clearGuidsCheckbox = CustomTextButton.new(
+local clearGuidsCheckbox = LabeledCheckbox.new(
 	"clearGuids", -- name suffix of the gui object
-	"Clear GUIDs on exit", -- the text displayed on the button
+	"Clear GUIDs", -- the text displayed on the button
 	false -- initial disabled state
 )
+
+clearGuidsCheckbox:SetValue(CONFIG.CLEAR_GUIDS_ON_EXIT)
+clearGuidsCheckbox:SetValueChangedFunction(function(newValue)
+	CONFIG.CLEAR_GUIDS_ON_EXIT = newValue
+	debugPrint("[🐛 Azul]: Clear GUIDs on exit set to:", newValue)
+end)
 
 settingsSection:AddChild(clearGuidsCheckbox:GetFrame())
 settingsSection:AddChild(
 	createInfoLabel(
-		[[When enabled, all Azul GUID attributes will only exist when the Plugin is connected.<br />
-		Disabling this can improve plugin startup performance, but leaving lingering GUID attributes when publishing your game may cause issues.]]
+		"When enabled, all Azul GUID attributes only exist when the Plugin is connected. Disabling this can improve plugin startup time, but leaving lingering GUID attributes when publishing your game may cause memory performance issues on low-end devices."
 	)
 )
 
