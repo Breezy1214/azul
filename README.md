@@ -10,7 +10,7 @@ _Yes, the name is a pun on Rojo (Spanish for "red"). Azul means "blue"!_
 
 ## Philosophy
 
-Unlike Rojo, Azul treats **Studio as the source of truth.** The local filesystem mirrors what's in Studio, not the other way around.
+Azul treats **Studio as the source of truth**. The local filesystem mirrors what's in Studio, not the other way around.
 
 Azul avoids the complexity and ambiguity that can come with tools like Rojo: for example, deciding a new Script's parent class, properties, or attributes. Rather than trying to encode Studio state in extra files (e.g. `*.meta.json`), Azul lets Studio be the source of truth. This, in my opinion, leads to a much simpler and more intuitive workflow.
 
