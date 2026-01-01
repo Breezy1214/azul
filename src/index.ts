@@ -379,7 +379,7 @@ export class SyncDaemon {
     walk(baseDir);
     if (removed > 0) {
       this.fileWriter.cleanupEmptyDirectories();
-      log.info(`Removed ${removed} orphan file(s) from sync directory`);
+      log.warn(`Removed ${removed} orphan file(s) from sync directory!`);
     }
   }
 }
