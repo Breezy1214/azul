@@ -135,7 +135,6 @@ This is my recommended setup for Azul projects. That said, Azul is compatible wi
 
 ### Studio Plugin (Luau)
 
-- Assigns stable GUIDs to instances
 - Detects script changes, renames, moves, deletions
 - Sends updates to daemon via WebSocket
 - Applies incoming patches from file edits
@@ -189,7 +188,6 @@ Edit `src/config.ts` to customize:
 The plugin's settings can be edited from the GUI or by editing `src/plugin/AzulSync.lua`:
 
 - **`WS_URL`**: Port used for communication between the Desktop Daemon and Studio Plugin.
-- **`GUID_ATTRIBUTE`**: Name of the attribute used to store GUIDs.
 - **`SERVICE_LIST`**: A list of services. This list can act as a whitelist (only these services are synced) or a blacklist (these services are excluded from syncing).
   - **`LIST_TYPE`**: Whether the service list is treated as a whitelist or blacklist.
 - **`EXCLUDED_PARENTS`**: Parents to exclude from syncing _(i.e. `ServerStorage.RecPlugins`, a Folder managed by an external plugin you don't want to sync)_.

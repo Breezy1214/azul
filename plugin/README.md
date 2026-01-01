@@ -44,15 +44,8 @@ Roblox is very particular about how plugins are installed. Sometimes, just "gett
 - Check the Output window for error messages
 - Restart both the daemon and Studio
 
-### Clearing GUIDs
+### Clearing Legacy GUIDs
 
-In the rare case where you're getting GUID conflicts, or simply don't wish to keep existing GUIDs, you can clear all `AzulSyncGUID` attributes by running the following code in the Command Bar:
+Ever since Azul 1.0.4, the plugin uses a new method to identify projects. It is highly advised to clear any legacy GUIDs to avoid conflicts since they are no longer needed and consume unnecessary resources.
 
-```lua
--- Run this in the Command Bar
-for _, desc in ipairs(game:GetDescendants()) do
-    if desc:GetAttribute("AzulSyncGUID") then
-        desc:SetAttribute("AzulSyncGUID", nil)
-    end
-end
-```
+You can do so by clicking the "Clear Legacy GUIDs" button in the plugin settings. This will remove all old GUIDs stored in your Explorer.
