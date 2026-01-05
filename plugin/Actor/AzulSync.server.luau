@@ -278,6 +278,23 @@ local function instanceToData(instance)
 	return data
 end
 
+-- Utility: set script source safely (handles large sources via ScriptEditorService)
+local function setScriptSource(scriptInstance: Script | LocalScript | ModuleScript, source: string)
+	local ok, err = pcall(function()
+		if ScriptEditorService and ScriptEditorService.UpdateSourceAsync then
+			ScriptEditorService:UpdateSourceAsync(scriptInstance, function(...)
+				return source
+			end)
+		else
+			(scriptInstance :: Script).Source = source
+		end
+	end)
+
+	if not ok then warn("[Azul]: Failed to set script source", err) end
+
+	return ok
+end
+
 -- Send message to daemon
 local function sendMessage(messageType, data)
 	if not wsClient or not wsClient.connected then return false end
@@ -552,9 +569,9 @@ local function processMessage(message)
 			-- Record patch time BEFORE applying to prevent echo
 			lastPatchTime[message.guid] = tick()
 
-			-- Update source
+			-- Update source (large scripts via ScriptEditorService)
 			applyingPatch = true
-			instance.Source = message.source
+			setScriptSource(instance, message.source)
 
 			-- Keep flag set longer to cover any async events
 			task.delay(0.2, function()
@@ -566,25 +583,25 @@ local function processMessage(message)
 
 			-- Refresh the script editor if the script is currently open
 			-- This ensures VSCode changes are visible immediately
-			local success, scriptDocument = pcall(function()
-				return ScriptEditorService:FindScriptDocument(instance)
-			end)
+			-- local success, scriptDocument = pcall(function()
+			-- 	return ScriptEditorService:FindScriptDocument(instance)
+			-- end)
 
-			if success and scriptDocument then
+			-- if success and scriptDocument then
 				-- Close and reopen the document to refresh the editor
 				task.spawn(function()
-					pcall(function()
-						scriptDocument:CloseAsync()
-					end)
-					task.wait(0.1)
-					pcall(function()
-						ScriptEditorService:OpenScriptDocumentAsync(instance)
-					end)
+					-- pcall(function()
+					-- 	scriptDocument:CloseAsync()
+					-- end)
+					-- task.wait(0.1)
+					-- pcall(function()
+					-- 	ScriptEditorService:OpenScriptDocumentAsync(instance)
+					-- end)
 					-- Clear the patch marker after editor refresh completes
 					task.wait(0.2)
 					recentPatches[message.guid] = nil
 				end)
-			end
+			-- end
 		else
 			warn("[Azul]: Cannot apply patch - instance not found for GUID:", message.guid)
 			local count = 0
@@ -709,10 +726,7 @@ local function processMessage(message)
 				usedGuids[item.guid] = true
 
 				if isScriptClass(item.className) and item.source then
-					local okSource, errSource = pcall(function()
-						(instance :: Script).Source = item.source
-					end)
-					if not okSource then warn("[Azul]: Failed to set source for", item.name, errSource) end
+					setScriptSource(instance :: Script, item.source)
 				end
 
 				attachListeners(instance)
