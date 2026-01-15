@@ -543,6 +543,7 @@ export class PushCommand {
       this.ipc.onMessage((message: StudioMessage) => {
         if (message.type === "pushConfig") {
           const pushConfig = (message as PushConfigMessage).config;
+
           clearTimeout(timeout);
           if (!resolved) {
             resolved = true;
