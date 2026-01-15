@@ -227,7 +227,7 @@ export class RojoSnapshotBuilder {
     if (this.isIgnored(dirPath)) return;
 
     const entries = await fs.readdir(dirPath, { withFileTypes: true });
-    const initCandidates = this.initCandidatesFor();
+    const initCandidates = this.getInitCandidates();
 
     // If this directory has an init, the directory becomes that script; children attach under it
     const initEntry = entries.find(
@@ -341,7 +341,7 @@ export class RojoSnapshotBuilder {
   private async findInit(
     dirPath: string
   ): Promise<{ fileName: string; source: string } | null> {
-    const candidates = this.initCandidatesFor();
+    const candidates = this.getInitCandidates();
 
     for (const candidate of candidates) {
       const full = path.join(dirPath, candidate);
@@ -354,7 +354,7 @@ export class RojoSnapshotBuilder {
     return null;
   }
 
-  private initCandidatesFor(): string[] {
+  private getInitCandidates(): string[] {
     const bases = ["init", "init.server", "init.client", "init.module"];
 
     const variants: string[] = [];
