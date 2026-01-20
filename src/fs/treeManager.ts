@@ -27,16 +27,28 @@ export class TreeManager {
   }
 
   private registerSubtree(node: TreeNode): void {
-    this.pathIndex.set(this.pathKey(node.path), node);
-    for (const child of node.children.values()) {
-      this.registerSubtree(child);
+    const stack: TreeNode[] = [node];
+
+    while (stack.length > 0) {
+      const current = stack.pop()!;
+      this.pathIndex.set(this.pathKey(current.path), current);
+
+      for (const child of current.children.values()) {
+        stack.push(child);
+      }
     }
   }
 
   private unregisterSubtree(node: TreeNode): void {
-    this.pathIndex.delete(this.pathKey(node.path));
-    for (const child of node.children.values()) {
-      this.unregisterSubtree(child);
+    const stack: TreeNode[] = [node];
+
+    while (stack.length > 0) {
+      const current = stack.pop()!;
+      this.pathIndex.delete(this.pathKey(current.path));
+
+      for (const child of current.children.values()) {
+        stack.push(child);
+      }
     }
   }
 
@@ -167,12 +179,18 @@ export class TreeManager {
   }
 
   /**
-   * Update a single instance
+   * Update child paths iteratively
    */
   private recalculateChildPaths(node: TreeNode): void {
-    for (const child of node.children.values()) {
-      child.path = [...node.path, child.name];
-      this.recalculateChildPaths(child);
+    const queue: TreeNode[] = [...node.children.values()];
+
+    while (queue.length > 0) {
+      const child = queue.shift()!;
+      child.path = [...child.parent!.path, child.name];
+
+      for (const grandchild of child.children.values()) {
+        queue.push(grandchild);
+      }
     }
   }
 
@@ -183,16 +201,20 @@ export class TreeManager {
     }
 
     const scripts: TreeNode[] = [];
-    const walk = (node: TreeNode): void => {
-      for (const child of node.children.values()) {
-        if (this.isScriptNode(child)) {
-          scripts.push(child);
-        }
-        walk(child);
-      }
-    };
+    const stack: TreeNode[] = [...start.children.values()];
 
-    walk(start);
+    while (stack.length > 0) {
+      const node = stack.pop()!;
+
+      if (this.isScriptNode(node)) {
+        scripts.push(node);
+      }
+
+      for (const child of node.children.values()) {
+        stack.push(child);
+      }
+    }
+
     return scripts;
   }
 
