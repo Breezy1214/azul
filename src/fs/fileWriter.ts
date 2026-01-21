@@ -19,6 +19,7 @@ export interface FileMapping {
 export class FileWriter {
   private baseDir: string;
   private fileMappings: Map<string, FileMapping> = new Map();
+  private pathToGuid: Map<string, string> = new Map(); // Reverse index for O(1) path lookups
 
   constructor(baseDir: string = config.syncDir) {
     this.baseDir = path.resolve(baseDir);
@@ -33,15 +34,62 @@ export class FileWriter {
 
     // Clear existing mappings
     this.fileMappings.clear();
+    this.pathToGuid.clear();
 
-    // Process all script nodes
+    // Collect all script nodes for batch writing
+    const scriptNodes: TreeNode[] = [];
     for (const node of nodes.values()) {
       if (this.isScriptNode(node)) {
-        this.writeScript(node);
+        scriptNodes.push(node);
       }
     }
 
+    this.writeBatch(scriptNodes);
+
     log.success(`Wrote ${this.fileMappings.size} scripts to filesystem`);
+  }
+
+  /**
+   * Write multiple scripts in a batch for improved I/O efficiency
+   */
+  public writeBatch(nodes: TreeNode[]): void {
+    // Pre-compute all file paths and collect writes
+    const writes: { node: TreeNode; filePath: string; dirPath: string }[] = [];
+    const dirsToCreate = new Set<string>();
+    const batchPathToGuid = new Map<string, string>();
+
+    for (const node of nodes) {
+      if (!this.isScriptNode(node) || node.source === undefined) continue;
+      const filePath = this.getFilePathWithCollisionMap(node, batchPathToGuid);
+      const dirPath = path.dirname(filePath);
+      writes.push({ node, filePath, dirPath });
+      dirsToCreate.add(dirPath);
+      batchPathToGuid.set(path.resolve(filePath), node.guid);
+    }
+
+    // Batch create all directories first (sorted by depth to ensure parents exist)
+    const sortedDirs = Array.from(dirsToCreate).sort((a, b) => a.length - b.length);
+    for (const dir of sortedDirs) {
+      this.ensureDirectory(dir);
+    }
+
+
+    for (const { node, filePath } of writes) {
+      try {
+        fs.writeFileSync(filePath, node.source!, "utf-8");
+
+        this.fileMappings.set(node.guid, {
+          guid: node.guid,
+          filePath: filePath,
+          className: node.className,
+        });
+        this.pathToGuid.set(path.resolve(filePath), node.guid);
+
+        log.script(this.getRelativePath(filePath), "updated");
+      } catch (error) {
+        log.error(`Failed to write script ${filePath}:`, error);
+      }
+    }
   }
 
   /**
@@ -73,15 +121,17 @@ export class FileWriter {
       // If the target path changed for this guid, remove the old file to avoid stale copies
       if (pathChanged && previousPath && fs.existsSync(previousPath)) {
         fs.unlinkSync(previousPath);
+        this.pathToGuid.delete(path.resolve(previousPath));
         this.cleanupParentsIfEmpty(path.dirname(previousPath));
       }
 
-      // Update mapping
+      // Update mapping and reverse index
       this.fileMappings.set(node.guid, {
         guid: node.guid,
         filePath: filePath,
         className: node.className,
       });
+      this.pathToGuid.set(path.resolve(filePath), node.guid);
 
       log.script(this.getRelativePath(filePath), "updated");
       return filePath;
@@ -103,6 +153,7 @@ export class FileWriter {
     try {
       const deleted = this.deleteFilePathInternal(mapping.filePath);
       this.fileMappings.delete(guid);
+      this.pathToGuid.delete(path.resolve(mapping.filePath));
       return deleted;
     } catch (error) {
       log.error(`Failed to delete script ${mapping.filePath}:`, error);
@@ -126,6 +177,16 @@ export class FileWriter {
    * Get the filesystem path for a node
    */
   public getFilePath(node: TreeNode): string {
+    return this.getFilePathWithCollisionMap(node);
+  }
+
+  /**
+   * Get the filesystem path for a node, with optional collision map for batch operations
+   */
+  private getFilePathWithCollisionMap(
+    node: TreeNode,
+    batchCollisionMap?: Map<string, string>
+  ): string {
     // Build the path from the node's hierarchy. For scripts, we only use the parent path
     // as directories, then add the script file name. This prevents creating an extra
     // folder named after the script itself.
@@ -146,9 +207,14 @@ export class FileWriter {
     }
 
     const desiredPath = path.join(this.baseDir, ...parts);
+    const normalizedDesiredPath = path.resolve(desiredPath);
+
+    // Check for collisions in both the persistent mappings and the batch collision map
+    const existingGuid = this.findGuidByFilePath(desiredPath);
+    const batchGuid = batchCollisionMap?.get(normalizedDesiredPath);
+    const collision = existingGuid || batchGuid;
 
     // If another GUID already owns this path, disambiguate using a stable suffix
-    const collision = this.findGuidByFilePath(desiredPath);
     if (collision && collision !== node.guid) {
       const ext = config.scriptExtension;
       const uniqueName = `${this.sanitizeName(node.name)}__${node.guid.slice(
@@ -231,11 +297,11 @@ export class FileWriter {
       log.script(this.getRelativePath(normalized), "deleted");
     }
 
-    for (const [guid, mapping] of this.fileMappings) {
-      if (path.resolve(mapping.filePath) === normalized) {
-        this.fileMappings.delete(guid);
-        break;
-      }
+    
+    const guid = this.pathToGuid.get(normalized);
+    if (guid) {
+      this.fileMappings.delete(guid);
+      this.pathToGuid.delete(normalized);
     }
 
     return true;
@@ -272,13 +338,7 @@ export class FileWriter {
    * Get GUID by file path
    */
   public getGuidByPath(filePath: string): string | undefined {
-    const normalizedPath = path.resolve(filePath);
-    for (const [guid, mapping] of this.fileMappings) {
-      if (path.resolve(mapping.filePath) === normalizedPath) {
-        return guid;
-      }
-    }
-    return undefined;
+    return this.pathToGuid.get(path.resolve(filePath));
   }
 
   /**
