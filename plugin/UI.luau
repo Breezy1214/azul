@@ -199,7 +199,7 @@ function UI.new(plugin, config, enum, callbacks, constants, helpers): SelfType
 	debugModeCheckbox:SetValue(config.DEBUG_MODE)
 	debugModeCheckbox:SetValueChangedFunction(function(newValue)
 		config.DEBUG_MODE = newValue
-		helpers.debugPrint(`[🐛 Azul]: Debug mode set to: {newValue}`)
+		helpers.debugPrint(`[🐛 AzulUI]: Debug mode set to: {newValue}`)
 	end)
 	mainSection:AddChild(debugModeCheckbox:GetFrame())
 	mainSection:AddChild(createInfoLabel("Debug mode enables verbose logging to the output console."))
@@ -210,7 +210,7 @@ function UI.new(plugin, config, enum, callbacks, constants, helpers): SelfType
 	silentModeCheckbox:SetValue(config.SILENT_MODE)
 	silentModeCheckbox:SetValueChangedFunction(function(newValue)
 		config.SILENT_MODE = newValue
-		helpers.infoPrint(`[🐛 Azul]: Silent mode set to: {newValue}`)
+		helpers.infoPrint(`[🐛 AzulUI]: Silent mode set to: {newValue}`)
 	end)
 	mainSection:AddChild(silentModeCheckbox:GetFrame())
 	mainSection:AddChild(createInfoLabel("Silent mode suppresses all console output except errors."))
@@ -314,6 +314,8 @@ function UI.new(plugin, config, enum, callbacks, constants, helpers): SelfType
 
 	-- Settings scope callback
 	settingsScopeDropdown:SetValueChangedFunction(function(newValue: number | string, newText: string)
+		helpers.debugPrint("[🐛 AzulUI]: Settings scope changed to:", newText)
+
 		local newScope
 		if newValue == 1 then
 			newScope = enum.scope.GLOBAL
@@ -370,6 +372,10 @@ function UI:UpdateSyncState(enabled: boolean)
 		self.syncButton:GetButton().Text = "Connect"
 		self.titleImageLabel.Image = self.LOGO
 	end
+end
+
+function UI:SetSettingsScope(scope)
+	self.SETTINGS_SCOPE = scope
 end
 
 function UI:UpdateConfig()

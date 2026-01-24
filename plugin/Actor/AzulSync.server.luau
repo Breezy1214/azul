@@ -1064,7 +1064,7 @@ local uiCallbacks = {
 	onStartSync = startSync,
 	onStopSync = stopSync,
 	onConfigChanged = function(key, value)
-		debugPrint("[🐛 Azul]: " .. key .. " updated to:", value)
+		debugPrint(`[🐛 Azul]: Config {key} updated to: {value}`)
 	end,
 	onSettingsScopeChanged = function(newScope)
 		local newScopeIsGlobal = newScope == enum.scope.GLOBAL
@@ -1073,6 +1073,7 @@ local uiCallbacks = {
 		-- Persist the current scope before switching
 		saveSettings()
 		SETTINGS_SCOPE = newScope
+		azulUI:SetSettingsScope(SETTINGS_SCOPE)
 		loadSettings()
 		rebuildServiceSet()
 		azulUI:UpdateConfig()
