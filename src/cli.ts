@@ -18,7 +18,7 @@ const noWarnFlag = args.find((a) => a === "--no-warn");
 const rojoFlag = args.includes("--rojo");
 const rojoProjectFlag = getFlagValue(["--rojo-project"], args);
 
-const version = "1.2.1";
+const version = "1.2.2";
 
 if (args.includes("--help") || args.includes("-h")) {
   console.log(`
