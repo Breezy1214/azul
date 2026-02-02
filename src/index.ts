@@ -23,6 +23,8 @@ export class SyncDaemon {
   private fileWriter: FileWriter;
   private fileWatcher: FileWatcher;
   private sourcemapGenerator: SourcemapGenerator;
+  private batchDepth = 0; // Tracks nested batch processing
+  private batchNeedsSourcemapRegen = false; // Defer regen until batch ends
 
   constructor() {
     this.tree = new TreeManager();
@@ -67,8 +69,20 @@ export class SyncDaemon {
    */
   private handleStudioMessage(message: StudioMessage): void {
     if (message.type === "batch") {
-      for (const payload of message.messages) {
-        this.handleStudioMessage(payload);
+      this.batchDepth += 1;
+      try {
+        for (const payload of message.messages) {
+          this.handleStudioMessage(payload);
+        }
+      } finally {
+        this.batchDepth -= 1;
+
+        // If any delete in this batch missed its prune, only regenerate once at the end
+        if (this.batchDepth === 0 && this.batchNeedsSourcemapRegen) {
+          log.debug("Regenerating sourcemap after batched prune miss");
+          this.regenerateSourcemap();
+          this.batchNeedsSourcemapRegen = false;
+        }
       }
       return;
     }
@@ -280,8 +294,13 @@ export class SyncDaemon {
 
     // If prune failed to find the path (e.g., sourcemap drift), rebuild once to stay consistent
     if (!pruned) {
-      log.debug("Regenerating sourcemap due to prune miss");
-      this.regenerateSourcemap();
+      if (this.batchDepth > 0) {
+        // Defer regeneration until the batch completes to avoid repeated full rebuilds
+        this.batchNeedsSourcemapRegen = true;
+      } else {
+        log.debug("Regenerating sourcemap due to prune miss");
+        this.regenerateSourcemap();
+      }
     }
 
     this.fileWriter.cleanupEmptyDirectories();
