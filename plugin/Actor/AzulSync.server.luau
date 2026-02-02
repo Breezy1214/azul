@@ -715,7 +715,7 @@ end
 local function sendPushConfig()
 	local configPayload, err = readPushConfig()
 	if not configPayload then
-		debugPrint(`[🐛 Azul]: push config unavailable: {err}`)
+		warn(`[Azul]: push config unavailable: {err}`)
 		return false
 	end
 
