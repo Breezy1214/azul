@@ -424,7 +424,7 @@ export class TreeManager {
       node.parent = parent;
       node.parentGuid = parent.guid;
     } else {
-      log.warn(`Parent not found for re-parenting: ${path.join("/")}`);
+      log.debug(`Parent not found for re-parenting: ${path.join("/")}`);
     }
   }
 

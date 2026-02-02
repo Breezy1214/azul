@@ -28,7 +28,7 @@ export const log = {
       `${colors.dim}[${timestamp()}]${colors.reset} ${colors.blue}ℹ${
         colors.reset
       } ${message}`,
-      ...args
+      ...args,
     );
   },
 
@@ -37,7 +37,7 @@ export const log = {
       `${colors.dim}[${timestamp()}]${colors.reset} ${colors.green}✓${
         colors.reset
       } ${message}`,
-      ...args
+      ...args,
     );
   },
 
@@ -46,7 +46,7 @@ export const log = {
       `${colors.dim}[${timestamp()}]${colors.reset} ${colors.yellow}⚠${
         colors.reset
       } ${message}`,
-      ...args
+      ...args,
     );
   },
 
@@ -55,7 +55,7 @@ export const log = {
       `${colors.dim}[${timestamp()}]${colors.reset} ${colors.red}✗${
         colors.reset
       } ${message}`,
-      ...args
+      ...args,
     );
   },
 
@@ -63,7 +63,7 @@ export const log = {
     if (config.debugMode) {
       console.log(
         `${colors.dim}[${timestamp()}] 🔍 ${message}${colors.reset}`,
-        ...args
+        ...args,
       );
     }
   },
@@ -74,12 +74,12 @@ export const log = {
       action === "created"
         ? colors.green
         : action === "updated"
-        ? colors.yellow
-        : colors.red;
+          ? colors.yellow
+          : colors.red;
     console.log(
       `${colors.dim}[${timestamp()}]${colors.reset} ${color}${emoji}${
         colors.reset
-      } ${path}`
+      } ${path}`,
     );
   },
 };
