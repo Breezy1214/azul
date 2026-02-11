@@ -322,25 +322,28 @@ export class PushCommand {
 
     const sourceRootOpt = sourceOverride ?? this.options.source;
 
-    // Prefer searching under the provided source folder, if any.
+    // If a source root is provided, only search within it (and its nested projects).
     if (sourceRootOpt) {
       const srcRoot = path.resolve(cwd, sourceRootOpt);
       if (!fs.existsSync(srcRoot)) {
         log.warn(`--source path does not exist: ${srcRoot}`);
-      } else {
-        const direct = path.join(srcRoot, "default.project.json");
-        if (fs.existsSync(direct)) {
-          results.add(direct);
-        }
-
-        const foundInSource = await this.findProjectJsons(srcRoot, 6);
-        for (const f of foundInSource) {
-          results.add(f);
-        }
+        return [];
       }
+
+      const direct = path.join(srcRoot, "default.project.json");
+      if (fs.existsSync(direct)) {
+        results.add(direct);
+      }
+
+      const foundInSource = await this.findProjectJsons(srcRoot, 6);
+      for (const f of foundInSource) {
+        results.add(f);
+      }
+
+      return [...results];
     }
 
-    // Fallback: project root
+    // No source root: search at workspace root (previous behavior).
     const rootDirect = path.join(cwd, "default.project.json");
     if (fs.existsSync(rootDirect)) {
       results.add(rootDirect);
